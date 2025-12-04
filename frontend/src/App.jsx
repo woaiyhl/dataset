@@ -1,9 +1,10 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import './styles/app.less'
 import dayjs from 'dayjs'
-import { Layout, Typography, Space, Card, DatePicker, Row, Col, Segmented, Divider, Grid } from 'antd'
+import { Layout, Typography, Space, Card, DatePicker, Row, Col, Segmented, Divider, Grid, Select, Button, Modal } from 'antd'
+import axios from 'axios'
 import { DeleteOutlined } from '@ant-design/icons'
-import { UploadCsv, StatsList, TimeSeriesChart } from './components'
+import { UploadCsv, StatsList, TimeSeriesChart, UploadHistoryModal } from './components'
 
 function App() {
   const [dataset, setDataset] = useState([])
@@ -11,9 +12,14 @@ function App() {
   const [stats, setStats] = useState({})
   const [range, setRange] = useState({ start: '', end: '' })
   const [chartType, setChartType] = useState('line')
+  const [normalize, setNormalize] = useState(false)
   const [fileList, setFileList] = useState([])
   const [selectedUid, setSelectedUid] = useState(null)
   const [payloadByUid, setPayloadByUid] = useState({})
+  const [serverUploads, setServerUploads] = useState([])
+  const [historyVisible, setHistoryVisible] = useState(false)
+  const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ? import.meta.env.VITE_API_URL : 'http://localhost:3001'
+  const [selectedSeriesKeys, setSelectedSeriesKeys] = useState([])
   const screens = Grid.useBreakpoint()
   const isMobile = !screens.md
   const chartHeight = useMemo(() => {
@@ -73,13 +79,31 @@ function App() {
     setSelectedUid(meta.uid)
     setDataset(payload.data || [])
     setSeriesKeys(payload.columns?.series || [])
+    setSelectedSeriesKeys((payload.columns?.series || []).slice(0, 1))
     setStats(payload.stats || {})
+    setTimeout(async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/uploads`)
+        setServerUploads(res.data || [])
+      } catch { }
+    }, 0)
     if (payload.data && payload.data.length) {
       setRange({ start: payload.data[0].time, end: payload.data[payload.data.length - 1].time })
     } else {
       setRange({ start: '', end: '' })
     }
   }, [])
+
+  useEffect(() => {
+    let mounted = true
+      ; (async () => {
+        try {
+          const res = await axios.get(`${API_BASE}/api/uploads`)
+          if (mounted) setServerUploads(res.data || [])
+        } catch { }
+      })()
+    return () => { mounted = false }
+  }, [API_BASE])
 
   const applySelection = useCallback((uid) => {
     setSelectedUid(uid)
@@ -93,6 +117,7 @@ function App() {
     }
     setDataset(payload.data)
     setSeriesKeys(payload.columns.series)
+    setSelectedSeriesKeys(payload.columns.series.slice(0, 1))
     setStats(payload.stats)
     if (payload.data && payload.data.length) {
       setRange({ start: payload.data[0].time, end: payload.data[payload.data.length - 1].time })
@@ -142,6 +167,13 @@ function App() {
       applySelection(next[0]?.uid || null)
     }
   }, [applySelection, fileList, selectedUid])
+
+  const fetchUploads = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/uploads`)
+      setServerUploads(res.data || [])
+    } catch { }
+  }, [API_BASE])
 
 
 
@@ -199,6 +231,19 @@ function App() {
                   }}
                   style={{ width: '100%' }}
                 />
+                <Space style={{ marginTop: 8 }}>
+                  <Button size="small" onClick={async () => { await fetchUploads(); setHistoryVisible(true) }}>查看上传历史</Button>
+                </Space>
+                <Typography.Text>选择展示序列：</Typography.Text>
+                <Select
+                  mode="multiple"
+                  allowClear
+                  value={selectedSeriesKeys}
+                  onChange={setSelectedSeriesKeys}
+                  options={seriesKeys.map((k) => ({ label: k, value: k }))}
+                  style={{ width: '100%' }}
+                  placeholder="选择一个或多个序列"
+                />
               </Space>
 
             </Card>
@@ -207,11 +252,14 @@ function App() {
             <Card
               className="panel chart-card"
               title="可视化"
-              extra={<Segmented value={chartType} onChange={setChartType} options={[{ label: '折线图', value: 'line' }, { label: '柱状图', value: 'bar' }]} />}
+              extra={<Space>
+                <Segmented value={chartType} onChange={setChartType} options={[{ label: '折线图', value: 'line' }, { label: '柱状图', value: 'bar' }]} />
+                <Segmented value={normalize ? 'norm' : 'raw'} onChange={(v) => setNormalize(v === 'norm')} options={[{ label: '原始值', value: 'raw' }, { label: '归一化', value: 'norm' }]} />
+              </Space>}
               style={{ height: '100%' }}
             >
               {selectedUid ? (
-                <TimeSeriesChart seriesKeys={seriesKeys} filtered={filtered} gradients={gradients} chartType={chartType} height={chartHeight} />
+                <TimeSeriesChart seriesKeys={(selectedSeriesKeys.length ? selectedSeriesKeys : seriesKeys)} filtered={filtered} gradients={gradients} chartType={chartType} height={chartHeight} normalize={normalize} />
               ) : (
                 <div className="empty-state" style={{ height: chartHeight }}>请上传并选择文件</div>
               )}
@@ -234,6 +282,7 @@ function App() {
           </Col>
         </Row>
       </Layout.Content>
+      <UploadHistoryModal visible={historyVisible} data={serverUploads} onClose={() => setHistoryVisible(false)} onRefresh={fetchUploads} />
     </Layout>
   )
 }

@@ -1,0 +1,14 @@
+{
+  "name": "dataset",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w frontend & npm run start -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:backend": "npm run start -w backend"
+  }
+}

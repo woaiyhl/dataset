@@ -6,6 +6,7 @@ node_modules/
 npm-debug.log*
 pnpm-lock.yaml
 package-lock.json
+backend/uploads
 yarn.lock
 
 # Build outputs
@@ -25,4 +26,6 @@ coverage/
 
 # Editor
 .vscode/
+
+samples/*
 
