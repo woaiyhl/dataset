@@ -19,8 +19,7 @@ import {
 } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import axios from "axios";
-import { DeleteOutlined } from "@ant-design/icons";
-import { UploadCsv, StatsList, TimeSeriesChart, UploadHistoryModal } from "./components";
+import { UploadHistoryModal, SidebarPanel, ChartPanel } from "./components";
 
 function App() {
   const [dataset, setDataset] = useState([]);
@@ -216,163 +215,57 @@ function App() {
   }, [fetchUploads]);
 
   return (
-    <ConfigProvider locale={zhCN}>
-      <Layout className="app-wrapper" style={{ minHeight: "100vh" }}>
-        <Layout.Header className="header">
-          <Space
-            align="center"
-            wrap
-            style={{ width: "100%", justifyContent: isMobile ? "flex-start" : "space-between" }}
-          >
-            <Typography.Title level={3} style={{ margin: 0, color: "#fff" }}>
-              时序数据可视化
-            </Typography.Title>
-          </Space>
-        </Layout.Header>
-        <Layout.Content className="content">
-          <Row gutter={[16, 0]} className="main-row" align="stretch" wrap={false}>
-            <Col xs={24} className="sidebar-fixed">
-              <Card className="panel sidebar-card" title="数据设置">
-                <UploadCsv
-                  onSuccess={handleUploadSuccess}
-                  onParsed={onParsed}
-                  onFileListChange={onFileListChange}
-                  onRemove={onRemove}
-                  existingNames={fileList.map((f) => f.name)}
-                />
-                {fileList.length === 0 ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div>暂无文件</div>
-                    <Button size="small" onClick={openHistory}>
-                      查看上传历史
-                    </Button>
-                  </div>
-                ) : (
-                  <Space orientation="vertical" style={{ width: "100%" }}>
-                    <div
-                      className="file-summary"
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        已上传文件：<span className="file-count">{fileList.length}</span>
-                      </div>
-                      <Button size="small" onClick={openHistory}>
-                        查看上传历史
-                      </Button>
-                    </div>
-                    <div className="file-list">
-                      {fileList.map((f) => (
-                        <div
-                          key={f.uid}
-                          className={`file-item${selectedUid === f.uid ? " selected" : ""}`}
-                          onClick={() => applySelection(f.uid)}
-                        >
-                          <span className={`file-name${selectedUid === f.uid ? " selected" : ""}`}>
-                            {f.name}
-                          </span>
-                          <span
-                            className="file-action"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveByUid(f.uid);
-                            }}
-                            title="删除"
-                          >
-                            <DeleteOutlined />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </Space>
-                )}
-                <Divider style={{ margin: "8px 0" }} />
-                <Space orientation="vertical">
-                  <Typography.Text>选择时间范围：</Typography.Text>
-                  <DatePicker.RangePicker
-                    showTime
-                    value={range.start && range.end ? [dayjs(range.start), dayjs(range.end)] : null}
-                    onChange={(vals) => {
-                      if (!vals) return setRange({ start: "", end: "" });
-                      setRange({ start: vals[0].toISOString(), end: vals[1].toISOString() });
-                    }}
-                    style={{ width: "100%" }}
-                    placeholder={["开始时间", "结束时间"]}
-                  />
-                </Space>
-              </Card>
-            </Col>
-            <Col xs={24} className="chart-flex">
-              <Card
-                className="panel chart-card"
-                title="可视化"
-                extra={
-                  <Space>
-                    <Segmented
-                      value={chartType}
-                      onChange={setChartType}
-                      options={[
-                        { label: "折线图", value: "line" },
-                        { label: "柱状图", value: "bar" },
-                      ]}
-                    />
-                  </Space>
-                }
-                style={{ height: "100%" }}
-              >
-                {selectedUid ? (
-                  <TimeSeriesChart
-                    seriesKeys={seriesKeys}
-                    filtered={filtered}
-                    gradients={gradients}
-                    chartType={chartType}
-                    height={chartHeight}
-                  />
-                ) : (
-                  <div className="empty-state" style={{ height: chartHeight }}>
-                    请上传并选择文件
-                  </div>
-                )}
-                {selectedUid && seriesKeys.length > 0 && (
-                  <>
-                    <Divider style={{ margin: "12px 0" }} />
-                    <div className="stats-block">
-                      <div className="stats-header">
-                        <Typography.Text className="stats-title">统计摘要</Typography.Text>
-                        {selectedFileName && <span className="chip">{selectedFileName}</span>}
-                        {/* {range.start && range.end && (
-                        <span className="chip">{dayjs(range.start).format('YYYY-MM-DD HH:mm')} → {dayjs(range.end).format('YYYY-MM-DD HH:mm')}</span>
-                      )} */}
-                      </div>
-                      <StatsList
-                        seriesKeys={seriesKeys}
-                        stats={computedStats}
-                        gradients={gradients}
-                      />
-                    </div>
-                  </>
-                )}
-              </Card>
-            </Col>
-          </Row>
-        </Layout.Content>
-        <UploadHistoryModal
-          visible={historyVisible}
-          data={serverUploads}
-          onClose={() => setHistoryVisible(false)}
-          onRefresh={fetchUploads}
-        />
-      </Layout>
-    </ConfigProvider>
+    <Layout className="app-wrapper" style={{ minHeight: "100vh" }}>
+      <Layout.Header className="header">
+        <Space
+          align="center"
+          wrap
+          style={{ width: "100%", justifyContent: isMobile ? "flex-start" : "space-between" }}
+        >
+          <Typography.Title level={3} style={{ margin: 0, color: "#fff" }}>
+            时序数据可视化
+          </Typography.Title>
+        </Space>
+      </Layout.Header>
+      <Layout.Content className="content">
+        <Row gutter={[16, 0]} className="main-row" align="stretch" wrap={false}>
+          <Col xs={24} className="sidebar-fixed">
+            <SidebarPanel
+              fileList={fileList}
+              selectedUid={selectedUid}
+              onUploadSuccess={handleUploadSuccess}
+              onParsed={onParsed}
+              onFileListChange={onFileListChange}
+              onRemove={onRemove}
+              onRemoveByUid={handleRemoveByUid}
+              applySelection={applySelection}
+              openHistory={openHistory}
+              range={range}
+              setRange={setRange}
+            />
+          </Col>
+          <Col xs={24} className="chart-flex">
+            <ChartPanel
+              chartType={chartType}
+              setChartType={setChartType}
+              chartHeight={chartHeight}
+              selectedUid={selectedUid}
+              seriesKeys={seriesKeys}
+              filtered={filtered}
+              gradients={gradients}
+              selectedFileName={selectedFileName}
+              computedStats={computedStats}
+            />
+          </Col>
+        </Row>
+      </Layout.Content>
+      <UploadHistoryModal
+        visible={historyVisible}
+        data={serverUploads}
+        onClose={() => setHistoryVisible(false)}
+        onRefresh={fetchUploads}
+      />
+    </Layout>
   );
 }
 
