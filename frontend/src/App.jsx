@@ -210,8 +210,8 @@ function App() {
   }, [API_BASE]);
   // 打开上传历史弹框：先刷新历史列表，再显示
   const openHistory = useCallback(async () => {
-    await fetchUploads();
     setHistoryVisible(true);
+    await fetchUploads();
   }, [fetchUploads]);
 
   return (

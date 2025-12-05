@@ -10,10 +10,10 @@ const port = process.env.PORT || 3001
 
 app.use(cors(corsOptions))
 app.use(morgan('dev'))
+app.use(express.json())
 
 app.use('/api', uploadRoutes)
 
 app.listen(port, () => {
   console.log(`Backend listening on http://localhost:${port}`)
 })
-
